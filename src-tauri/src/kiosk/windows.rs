@@ -46,27 +46,32 @@ fn is_ctrl_pressed() -> bool {
 }
 
 pub fn enable_keyboard_hook() {
-    unsafe {
-        let h_module = GetModuleHandleW(None).unwrap();
-        let hook_proc: HOOKPROC = Some(keyboard_hook_proc);
+    std::thread::spawn(|| {
+        unsafe {
+            let h_module = GetModuleHandleW(None).unwrap();
+            let hook_proc: HOOKPROC = Some(keyboard_hook_proc);
 
-        let hook = SetWindowsHookExW(WH_KEYBOARD_LL, hook_proc, h_module, 0);
+            let hook = SetWindowsHookExW(WH_KEYBOARD_LL, hook_proc, h_module, 0);
 
-        match hook {
-            Ok(h) => {
-                HOOK_HANDLE = Some(h);
-                println!("[Kiosk] Keyboard hook installed successfully");
+            match hook {
+                Ok(h) => {
+                    HOOK_HANDLE = Some(h);
+                    println!("[Kiosk] Keyboard hook installed successfully");
 
-                let mut msg = MSG::default();
-                while GetMessageW(&mut msg, None, 0, 0).into() {
-                    // Keep processing messages to keep hook alive
+                    // Message loop required to keep the low-level keyboard hook alive.
+                    // Runs on a dedicated thread so the main thread can drive
+                    // the Tauri event loop without blocking.
+                    let mut msg = MSG::default();
+                    while GetMessageW(&mut msg, None, 0, 0).into() {
+                        // Keep processing messages to keep hook alive
+                    }
+                }
+                Err(e) => {
+                    eprintln!("[Kiosk] Failed to install keyboard hook: {}", e);
                 }
             }
-            Err(e) => {
-                eprintln!("[Kiosk] Failed to install keyboard hook: {}", e);
-            }
         }
-    }
+    });
 }
 
 #[allow(dead_code)]
