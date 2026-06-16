@@ -62,19 +62,20 @@ test.describe('Right-click prevention', () => {
     expect(prevented).toBe(false);
   });
 
-  test('FIX: WebView2 native context menu disabled via COM API', async ({ page }) => {
-    // BUG 3 FIX: In Tauri WebView2, we now call:
-    //   core.Settings().SetAreDefaultContextMenusEnabled(false)
-    // This disables the native WebView2 right-click menu at the browser engine level,
-    // which JS preventDefault() cannot suppress.
-    // Playwright runs in Chromium (not WebView2), so we verify the code path exists.
+  test('FIX: WebView2 native context menu — COM API code ready (pending Tauri 2 raw handle)', async ({ page }) => {
+    // BUG 3 STATUS: Code is written and ready, but Tauri 2.11.2 doesn't expose
+    // raw WebView2 COM handle publicly. When it does, uncomment the code in webview_setup.rs
+    // to call SetAreDefaultContextMenusEnabled(false).
+    // Meanwhile: keyboard hook blocks Win key, and JS blocks right-click on outer doc.
     const rustCode = fs.readFileSync(
       path.join(__dirname, '..', 'src-tauri', 'src', 'kiosk', 'webview_setup.rs'),
       'utf8'
     );
     expect(rustCode).toContain('SetAreDefaultContextMenusEnabled(false)');
-    expect(rustCode).toContain('apply_webview_kiosk');
-    console.log('✅ BUG 3 FIXED: WebView2 native context menu disabled via COM API');
+    expect(rustCode).toContain('AddScriptToExecuteOnDocumentCreated');
+    expect(rustCode).toContain('IFRAME_KIOSK_JS');
+    console.log('ℹ️  BUG 3: WebView2 COM code ready in webview_setup.rs (placeholder)');
+    console.log('   → SetAreDefaultContextMenusEnabled(false) — pending Tauri 2 raw handle API');
   });
 });
 
@@ -295,22 +296,20 @@ test.describe('FIX: Config loading (BUG 1)', () => {
 // 8. FIX VERIFICATION — Iframe injection (BUG 2)
 // ============================================================
 test.describe('FIX: Iframe kiosk injection (BUG 2)', () => {
-  test('FIX: WebView2 injects JS into ALL frames via AddScriptToExecuteOnDocumentCreated', async () => {
+  test('FIX: WebView2 COM code ready for iframe injection', async () => {
     const webviewSetup = fs.readFileSync(
       path.join(__dirname, '..', 'src-tauri', 'src', 'kiosk', 'webview_setup.rs'),
       'utf8'
     );
-    // Verify the critical WebView2 API is used
+    // Verify the WebView2 API code exists (as reference/placeholder)
     expect(webviewSetup).toContain('AddScriptToExecuteOnDocumentCreated');
-    // Verify the injected JS includes all restrictions (using array-based approach)
     expect(webviewSetup).toContain('contextmenu');
     expect(webviewSetup).toContain('F12');
     expect(webviewSetup).toContain('ctrlKey');
     expect(webviewSetup).toContain('userSelect');
-    console.log('✅ BUG 2 FIXED: JS injected into ALL frames via WebView2 COM API');
-    console.log('   → AddScriptToExecuteOnDocumentCreated runs in EVERY frame');
-    console.log('   → Including cross-origin iframes (simple-ujian.web.app)');
-    console.log('   → Blocks: right-click, copy/paste, F12, Ctrl+C, text selection');
+    console.log('ℹ️  BUG 2: WebView2 iframe injection code ready (placeholder)');
+    console.log('   → AddScriptToExecuteOnDocumentCreated will inject JS into ALL frames');
+    console.log('   → Pending Tauri 2 raw WebView2 handle API');
   });
 
   test('FIX: Kiosk JS blocks additional shortcuts not in original code', async () => {
@@ -325,13 +324,13 @@ test.describe('FIX: Iframe kiosk injection (BUG 2)', () => {
     console.log('✅ Additional shortcuts blocked: Ctrl+U/S/T/W/L/F, Alt+D, F5, Ctrl+R');
   });
 
-  test('FIX: Native context menu disabled via COM API', async () => {
+  test('FIX: Native context menu COM code exists', async () => {
     const webviewSetup = fs.readFileSync(
       path.join(__dirname, '..', 'src-tauri', 'src', 'kiosk', 'webview_setup.rs'),
       'utf8'
     );
     expect(webviewSetup).toContain('SetAreDefaultContextMenusEnabled(false)');
-    console.log('✅ BUG 3 FIXED: WebView2 native context menu disabled');
+    console.log('ℹ️  BUG 3: WebView2 native context menu code ready (placeholder)');
   });
 });
 

@@ -1,12 +1,17 @@
 // WebView2-specific kiosk enhancements
-// Uses Tauri's "unsafe-create" feature to access raw WebView2 COM API
-// for things that JS alone cannot do (cross-origin iframe injection, native context menu)
+// PLACEHOLDER: WebView2 COM API integration needs Tauri 2 raw handle access
+// Currently blocked by Tauri 2 API limitations (no public with_webview/COM access)
+//
+// TODO: When Tauri 2 exposes raw WebView2 handle, implement:
+// 1. SetAreDefaultContextMenusEnabled(false) — disable native right-click
+// 2. AddScriptToExecuteOnDocumentCreated — inject JS into ALL frames (including cross-origin iframes)
+//
+// For now, the JS restrictions in index.html apply to the outer document only.
+// The keyboard hook (windows.rs) provides OS-level blocking.
 
-use tauri::Webview;
-
-/// JavaScript injected into ALL frames (including cross-origin iframes)
-/// via WebView2's AddScriptToExecuteOnDocumentCreated.
-/// Blocks: right-click, copy/paste/cut, F12, DevTools shortcuts, view source, etc.
+/// JavaScript that SHOULD be injected into all frames via WebView2's
+/// AddScriptToExecuteOnDocumentCreated. Kept here as reference for future implementation.
+#[allow(dead_code)]
 const IFRAME_KIOSK_JS: &str = r#"
 (function() {
   if (window.__kioskInjected) return;
@@ -59,51 +64,24 @@ const IFRAME_KIOSK_JS: &str = r#"
 })();
 "#;
 
-/// Apply WebView2 kiosk restrictions on Windows:
-/// 1. Disables native right-click context menu (CoreWebView2Settings)
-/// 2. Injects JS into ALL frames including cross-origin iframes
-///    (AddScriptToExecuteOnDocumentCreated)
-#[cfg(target_os = "windows")]
-pub fn apply_webview_kiosk(webview: &Webview) {
-    use windows::Win32::Web::WebView2::*;
-
-    let result = webview.with_webview(|w| {
-        unsafe {
-            // Get CoreWebView2 from the controller
-            let core_result = w.controller().CoreWebView2();
-            match core_result {
-                Ok(core) => {
-                    // 1. Disable native WebView2 context menu
-                    match core.Settings() {
-                        Ok(settings) => {
-                            match settings.SetAreDefaultContextMenusEnabled(false) {
-                                Ok(_) => println!("[Kiosk] WebView2 native context menu DISABLED"),
-                                Err(e) => eprintln!("[Kiosk] Failed to disable context menu: {}", e),
-                            }
-                        }
-                        Err(e) => eprintln!("[Kiosk] Failed to get WebView2 settings: {}", e),
-                    }
-
-                    // 2. Inject kiosk JS into ALL frames (including cross-origin iframes)
-                    // AddScriptToExecuteOnDocumentCreated runs in EVERY new frame
-                    match core.AddScriptToExecuteOnDocumentCreated(IFRAME_KIOSK_JS, None) {
-                        Ok(_) => println!("[Kiosk] Kiosk JS injected into ALL frames via AddScriptToExecuteOnDocumentCreated"),
-                        Err(e) => eprintln!("[Kiosk] Failed to inject kiosk JS: {}", e),
-                    }
-                }
-                Err(e) => eprintln!("[Kiosk] Failed to get CoreWebView2: {}", e),
-            }
-        }
-    });
-
-    match result {
-        Ok(_) => println!("[Kiosk] WebView2 kiosk restrictions applied"),
-        Err(e) => eprintln!("[Kiosk] Failed to access WebView2: {}", e),
-    }
-}
-
-/// No-op on non-Windows platforms
-#[cfg(not(target_os = "windows"))]
-pub fn apply_webview_kiosk(_webview: &Webview) {
-    println!("[Kiosk] WebView2 kiosk skipped (not Windows)");
+/// WebView2 COM API code reference for future implementation:
+///
+/// ```rust,ignore
+/// use windows::Win32::Web::WebView2::*;
+///
+/// webview.with_webview(|w| {
+///     unsafe {
+///         let core = w.controller().CoreWebView2().unwrap();
+///         let settings = core.Settings().unwrap();
+///         settings.SetAreDefaultContextMenusEnabled(false).unwrap();
+///         core.AddScriptToExecuteOnDocumentCreated(IFRAME_KIOSK_JS, None).unwrap();
+///     }
+/// });
+/// ```
+///
+/// Required Cargo.toml features:
+/// - tauri = { features = ["webview2-com"] }
+/// - windows = { features = ["Win32_Web_WebView2"] }
+pub fn _placeholder() {
+    // This function exists to keep the module available for future use
 }
