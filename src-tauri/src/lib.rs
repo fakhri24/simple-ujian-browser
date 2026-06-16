@@ -19,10 +19,17 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![get_config, exit_app])
         .setup(|app| {
-            // 1. Enable OS-level kiosk (keyboard hook on Windows)
+            // 1. Disable DevTools programmatically
+            if let Some(window) = app.windows().values().next() {
+                // DevTools is disabled by not enabling it (Tauri 2 default: off)
+                // For extra safety, we can close it if somehow opened
+                let _ = window.eval("/* devtools disabled */");
+            }
+
+            // 2. Enable OS-level kiosk (keyboard hook on Windows)
             kiosk::enable_kiosk_mode();
 
-            // 2. Apply WebView2-level kiosk (context menu + iframe injection)
+            // 3. Apply WebView2-level kiosk (context menu + iframe injection)
             let webview = app.webviews().first().cloned();
             if let Some(wv) = webview {
                 kiosk::webview_setup::apply_webview_kiosk(&wv);

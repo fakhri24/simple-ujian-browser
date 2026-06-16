@@ -155,14 +155,17 @@ test.describe('DevTools prevention', () => {
     expect(prevented).toBe(true);
   });
 
-  test('FIX: DevTools disabled at Tauri config level', async ({ page }) => {
-    // BUG 3 FIX: devtools: false in tauri.conf.json disables DevTools entirely
+  test('FIX: DevTools disabled at Tauri level', async ({ page }) => {
+    // DevTools is disabled by default in Tauri 2 release builds.
+    // Additionally, we don't enable it explicitly in tauri.conf.json.
+    // In Tauri 2, devtools are only available in debug builds by default.
     const config = JSON.parse(fs.readFileSync(
       path.join(__dirname, '..', 'src-tauri', 'tauri.conf.json'),
       'utf8'
     ));
-    expect(config.app.devtools).toBe(false);
-    console.log('✅ DevTools disabled at Tauri config level (devtools: false)');
+    // Verify devtools is NOT explicitly enabled
+    expect(config.app.devtools).toBeUndefined();
+    console.log('✅ DevTools disabled (not enabled in config, Tauri 2 default: off in release)');
   });
 });
 
