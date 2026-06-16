@@ -1,10 +1,13 @@
 use std::ptr::null_mut;
 use windows::Win32::Foundation::{LRESULT, WPARAM, LPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows::Win32::UI::WindowsHooks::{SetWindowsHookExW, UnhookWindowsHookEx, HOOKPROC, WH_KEYBOARD_LL};
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    KBDLLHOOKSTRUCT, VK_TAB, VK_LWIN, VK_RWIN, VK_ESCAPE, VK_F4,
+use windows::Win32::UI::WindowsAndMessaging::{
+    SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx,
+    KBDLLHOOKSTRUCT, HOOKPROC, WH_KEYBOARD_LL,
     GetMessageW, MSG,
+};
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    VK_TAB, VK_LWIN, VK_RWIN, VK_ESCAPE, VK_F4, GetAsyncKeyState,
 };
 
 const LLKHF_ALTDOWN: u32 = 0x20;
@@ -35,11 +38,10 @@ unsafe extern "system" fn keyboard_hook_proc(
         }
     }
 
-    windows::Win32::UI::WindowsHooks::CallNextHookEx(None, code, wparam, lparam)
+    CallNextHookEx(None, code, wparam, lparam)
 }
 
 fn is_ctrl_pressed() -> bool {
-    use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
     const VK_CONTROL: i32 = 0x11;
     unsafe { (GetAsyncKeyState(VK_CONTROL) & 0x8000u16 as i16) != 0 }
 }
@@ -63,7 +65,7 @@ pub fn enable_keyboard_hook() {
 
                 let mut msg = MSG::default();
                 while GetMessageW(&mut msg, None, 0, 0).into() {
-                    // Keep processing messages
+                    // Keep processing messages to keep hook alive
                 }
             }
             Err(e) => {
@@ -73,6 +75,7 @@ pub fn enable_keyboard_hook() {
     }
 }
 
+#[allow(dead_code)]
 pub fn disable_keyboard_hook() {
     unsafe {
         if !HOOK_HANDLE.is_null() {
