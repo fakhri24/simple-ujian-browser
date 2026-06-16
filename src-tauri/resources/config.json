@@ -1,0 +1,17 @@
+{
+  "exam_url": "https://simple-ujian.web.app",
+  "exam_name": "Ujian Sekolah",
+  "whitelist": [
+    "https://simple-ujian.web.app",
+    "https://accounts.google.com",
+    "https://*.googleapis.com",
+    "https://*.firebaseapp.com",
+    "https://www.gstatic.com"
+  ],
+  "fullscreen": true,
+  "block_shortcuts": true,
+  "block_task_switching": true,
+  "disable_right_click": true,
+  "disable_copy_paste": true,
+  "admin_password": "guru2026"
+}

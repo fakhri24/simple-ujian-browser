@@ -1,29 +1,50 @@
 # Simple Ujian Browser
 
-Custom exam browser untuk sekolah — bagian dari ekosistem ujian digital.
+Custom exam browser untuk Windows — bagian dari ekosistem ujian digital.
 
-## Strategi: Hybrid Approach
+## Strategi Hybrid
 
-| Platform | Solusi | Status |
-|----------|--------|--------|
-| macOS | Safe Exam Browser (SEB) | ✅ Siap pakai |
-| iOS/iPad | Safe Exam Browser (SEB) | ✅ Siap pakai |
-| Windows | Custom Tauri + Rust | 🔨 Planned |
-| Android | Custom Tauri 2 + Rust | 🔨 Planned |
+| Platform | Solusi |
+|----------|--------|
+| macOS/iPad | Safe Exam Browser (SEB) — install dari App Store |
+| **Windows** | **Simple Ujian Browser — this app (Tauri + Rust)** |
+| **Android** | **Simple Ujian Browser — planned** |
 
-## Dokumentasi
+## Quick Start (Development)
 
-- [Architecture & Implementation Guide](docs/ARCHITECTURE.md)
+```bash
+cd ~/project/ujian/simple-ujian-browser
+cargo tauri dev
+```
+
+## Build via CI/CD
+
+Push a tag to trigger Windows build:
+```bash
+git tag v0.x.x
+git push origin v0.x.x
+```
+GitHub Actions builds .msi + .exe artifacts.
+
+## Config
+
+Edit `config.json` that ships with the app:
+- `exam_url` — URL ujian (default: simple-ujian.web.app)
+- `whitelist` — allowed URLs during exam
+- `admin_password` — password untuk keluar (Ctrl+Shift+Q)
+- `exam_name` — nama ujian yang tampil di info bar
+
+## Exit
+
+**Ctrl+Shift+Q** → enter admin password → app closes.
 
 ## Related Projects
 
-- [simple-ujian](../simple-ujian/) — Website ujian online (Firebase)
-- [grader-mtk](../grader-mtk/) — Sistem grading matematika
+- [simple-ujian](../simple-ujian/) — Website ujian online
+- [grader-mtk](../grader-mtk/) — Sistem grading
 - [web-ujian-mandiri](../web-ujian-mandiri/) — Ujian mandiri
 
-## Stack
+## Docs
 
-- **Backend:** Rust (Tauri 2)
-- **Frontend:** Vanilla JS
-- **Config:** JSON (local file)
-- **Detection:** User agent compatible with simple-ujian SEB check
+- [Architecture Guide](docs/ARCHITECTURE.md)
+- [Implementation Plan](.hermes/plans/2026-06-16_desktop-implementation.md)
