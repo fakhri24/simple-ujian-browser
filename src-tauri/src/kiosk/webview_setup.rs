@@ -1,18 +1,13 @@
-// WebView2-specific kiosk enhancements
-// PLACEHOLDER: WebView2 COM API integration needs Tauri 2 raw handle access
-// Currently blocked by Tauri 2 API limitations (no public with_webview/COM access)
+// Kiosk JavaScript injected into EVERY frame of the webview.
 //
-// TODO: When Tauri 2 exposes raw WebView2 handle, implement:
-// 1. SetAreDefaultContextMenusEnabled(false) — disable native right-click
-// 2. AddScriptToExecuteOnDocumentCreated — inject JS into ALL frames (including cross-origin iframes)
-//
-// For now, the JS restrictions in index.html apply to the outer document only.
-// The keyboard hook (windows.rs) provides OS-level blocking.
+// This is passed to `WebviewWindowBuilder::initialization_script`, which on
+// Windows/WebView2 maps to `AddScriptToExecuteOnDocumentCreated` — so the script
+// runs on the top document AND every child frame, including the cross-origin exam
+// iframe. That closes the gap where document-level JS in index.html could not
+// reach the exam content. OS-level keys are still handled by the keyboard hook
+// (windows.rs); this layer covers in-page actions (copy/paste/right-click/devtools).
 
-/// JavaScript that SHOULD be injected into all frames via WebView2's
-/// AddScriptToExecuteOnDocumentCreated. Kept here as reference for future implementation.
-#[allow(dead_code)]
-const IFRAME_KIOSK_JS: &str = r#"
+pub const KIOSK_SCRIPT: &str = r#"
 (function() {
   if (window.__kioskInjected) return;
   window.__kioskInjected = true;
@@ -33,7 +28,7 @@ const IFRAME_KIOSK_JS: &str = r#"
 
   // Block dangerous keyboard shortcuts
   document.addEventListener('keydown', function(e) {
-    var key = e.key.toLowerCase();
+    var key = (e.key || '').toLowerCase();
 
     // DevTools
     if (e.key === 'F12') { e.preventDefault(); return false; }
@@ -63,25 +58,3 @@ const IFRAME_KIOSK_JS: &str = r#"
   }
 })();
 "#;
-
-/// WebView2 COM API code reference for future implementation:
-///
-/// ```rust,ignore
-/// use windows::Win32::Web::WebView2::*;
-///
-/// webview.with_webview(|w| {
-///     unsafe {
-///         let core = w.controller().CoreWebView2().unwrap();
-///         let settings = core.Settings().unwrap();
-///         settings.SetAreDefaultContextMenusEnabled(false).unwrap();
-///         core.AddScriptToExecuteOnDocumentCreated(IFRAME_KIOSK_JS, None).unwrap();
-///     }
-/// });
-/// ```
-///
-/// Required Cargo.toml features:
-/// - tauri = { features = ["webview2-com"] }
-/// - windows = { features = ["Win32_Web_WebView2"] }
-pub fn _placeholder() {
-    // This function exists to keep the module available for future use
-}

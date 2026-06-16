@@ -1,23 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Simple Ujian Browser",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "identifier": "id.simple-ujian-browser",
   "build": {
     "frontendDist": "../src",
     "devUrl": "https://simple-ujian.web.app"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Simple Ujian Browser",
-        "fullscreen": true,
-        "decorations": false,
-        "resizable": false,
-        "alwaysOnTop": true,
-        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SimpleExamBrowser/1.0 SEB"
-      }
-    ],
+    "withGlobalTauri": true,
+    "windows": [],
     "security": {
       "csp": "default-src 'self' https://simple-ujian.web.app https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com"
     }

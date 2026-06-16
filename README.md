@@ -30,8 +30,13 @@ GitHub Actions builds .msi + .exe artifacts.
 
 Edit `config.json` that ships with the app:
 - `exam_url` — URL ujian (default: simple-ujian.web.app)
-- `whitelist` — allowed URLs during exam
-- `admin_password` — password untuk keluar (Ctrl+Shift+Q)
+- `whitelist` — allowed URLs during exam (origin; `*` matches one host segment, e.g. `https://*.googleapis.com`)
+- `admin_password_hash` — **SHA-256** dari password keluar (Ctrl+Shift+Q). Password tidak pernah disimpan plaintext maupun dikirim ke frontend. Generate dengan:
+  ```sh
+  printf '%s' 'password-anda' | sha256sum   # Linux
+  printf '%s' 'password-anda' | shasum -a 256   # macOS
+  ```
+  Default `guru2026` → `8ae731714ca5770a7b2f2c88f6e9e444e116aa61caa9e3874e04f4406c9d62ef`.
 - `exam_name` — nama ujian yang tampil di info bar
 
 ## Exit

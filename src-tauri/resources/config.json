@@ -13,5 +13,5 @@
   "block_task_switching": true,
   "disable_right_click": true,
   "disable_copy_paste": true,
-  "admin_password": "guru2026"
+  "admin_password_hash": "8ae731714ca5770a7b2f2c88f6e9e444e116aa61caa9e3874e04f4406c9d62ef"
 }

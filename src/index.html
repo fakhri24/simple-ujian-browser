@@ -99,7 +99,7 @@
     async function initExamBrowser() {
       try {
         examConfig = await invoke('get_config');
-        log('Config loaded: ' + JSON.stringify(examConfig));
+        log('Config loaded for: ' + examConfig.exam_name);
         document.getElementById('exam-name').textContent = examConfig.exam_name;
         document.getElementById('exam-frame').src = examConfig.exam_url;
 
@@ -115,9 +115,10 @@
         log('Loaded: ' + examConfig.exam_name);
       } catch (e) {
         console.error('[SimpleUjianBrowser] Config error:', e);
-        // Fallback config so exit dialog still works
-        examConfig = { admin_password: 'guru2026', exam_name: 'Simple Ujian Browser', exam_url: 'https://simple-ujian.web.app' };
-        log('Using fallback config');
+        // Display-only fallback. No password here — exit is verified in Rust
+        // (verify_admin_password) regardless of whether get_config succeeded.
+        examConfig = { exam_name: 'Simple Ujian Browser', exam_url: 'https://simple-ujian.web.app' };
+        log('Using display fallback config');
       }
     }
 
@@ -131,7 +132,9 @@
       if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
       if (e.key === 'F5') e.preventDefault();
 
-      // Block Windows-key combos (Win+D, Win+E, Win+R, Win+L, etc.)
+      // Best-effort suppression of Meta/Win combos within the page. NOTE: OS-level
+      // combos (Win+L, Win+D, etc.) cannot be stopped from JS — the Rust keyboard
+      // hook (windows.rs) is what actually blocks them. This is only a supplement.
       if (e.key === 'Meta' || e.metaKey) {
         e.preventDefault();
         e.stopPropagation();
@@ -149,7 +152,7 @@
       }
     });
 
-    // Also block keyup for Meta/Win to prevent Start menu release
+    // Supplement only — the OS Start menu is actually blocked by the Rust hook.
     document.addEventListener('keyup', (e) => {
       if (e.key === 'Meta') {
         e.preventDefault();
@@ -171,29 +174,37 @@
 
     async function confirmExit() {
       const password = document.getElementById('exit-password').value;
-      log('confirmExit called, config loaded: ' + !!examConfig + ', password length: ' + password.length);
-      if (!examConfig) {
-        document.getElementById('exit-error').textContent = 'Config belum dimuat! Coba lagi.';
-        document.getElementById('exit-error').style.display = 'block';
-        return;
-      }
-      if (password === examConfig.admin_password) {
-        log('Password correct, exiting...');
-        try {
+      const errorEl = document.getElementById('exit-error');
+      try {
+        // Password is verified in Rust; the secret never lives in the frontend.
+        const ok = await invoke('verify_admin_password', { password });
+        if (ok) {
+          log('Password correct, exiting...');
           await invoke('exit_app');
-        } catch (e) {
-          console.error('Exit failed:', e);
-          window.close();
+        } else {
+          errorEl.textContent = 'Password salah!';
+          errorEl.style.display = 'block';
         }
-      } else {
-        log('Wrong password');
-        document.getElementById('exit-error').textContent = 'Password salah!';
-        document.getElementById('exit-error').style.display = 'block';
+      } catch (e) {
+        console.error('[SimpleUjianBrowser] Exit verification failed:', e);
+        errorEl.textContent = 'Gagal memverifikasi. Coba lagi.';
+        errorEl.style.display = 'block';
       }
     }
 
     // === Disable text selection ===
     document.body.style.userSelect = 'none';
+
+    // === Show blocked-URL overlay when Rust cancels a non-whitelisted navigation ===
+    let blockedTimer = null;
+    if (window.__TAURI__ && window.__TAURI__.event) {
+      window.__TAURI__.event.listen('blocked-url', () => {
+        const overlay = document.getElementById('blocked-overlay');
+        overlay.style.display = 'flex';
+        clearTimeout(blockedTimer);
+        blockedTimer = setTimeout(() => { overlay.style.display = 'none'; }, 3000);
+      });
+    }
 
     // === Initialize ===
     initExamBrowser();
