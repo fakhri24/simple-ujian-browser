@@ -24,9 +24,6 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
 
@@ -51,9 +48,6 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
-
-      - name: Install dependencies
-        run: npm install
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
