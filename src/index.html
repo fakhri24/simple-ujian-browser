@@ -82,10 +82,13 @@
   </div>
 
   <script>
+    // === Debug logger (visible in Tauri console) ===
+    function log(msg) { console.log('[SimpleUjianBrowser]', msg); }
+
     // === SEB Detection ===
     window.SafeExamBrowser = { version: "1.0.0", custom: true };
 
-    // === Tauri invoke helper ===
+    // === Tauri invoke helper (Tauri 2 API) ===
     async function invoke(cmd, args) {
       return window.__TAURI__.core.invoke(cmd, args);
     }
@@ -96,6 +99,7 @@
     async function initExamBrowser() {
       try {
         examConfig = await invoke('get_config');
+        log('Config loaded: ' + JSON.stringify(examConfig));
         document.getElementById('exam-name').textContent = examConfig.exam_name;
         document.getElementById('exam-frame').src = examConfig.exam_url;
 
@@ -108,19 +112,31 @@
           });
         }
 
-        console.log('[SimpleUjianBrowser] Loaded:', examConfig.exam_name);
+        log('Loaded: ' + examConfig.exam_name);
       } catch (e) {
         console.error('[SimpleUjianBrowser] Config error:', e);
+        // Fallback config so exit dialog still works
+        examConfig = { admin_password: 'guru2026', exam_name: 'Simple Ujian Browser', exam_url: 'https://simple-ujian.web.app' };
+        log('Using fallback config');
       }
     }
 
-    // === Keyboard shortcuts (frontend level) ===
+    // === Block system keys at JS level (supplements Rust keyboard hook) ===
     document.addEventListener('keydown', (e) => {
+      // Block common shortcuts
       if (e.ctrlKey && ['c','v','x','a','p'].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
       if (e.key === 'F12') e.preventDefault();
       if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
+      if (e.key === 'F5') e.preventDefault();
+
+      // Block Windows-key combos (Win+D, Win+E, Win+R, Win+L, etc.)
+      if (e.key === 'Meta' || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        log('Blocked meta key combo: ' + e.key);
+      }
 
       // Admin exit: Ctrl+Shift+Q
       if (e.ctrlKey && e.shiftKey && e.key === 'Q') {
@@ -130,6 +146,14 @@
       if (e.key === 'Escape') closeExitDialog();
       if (e.key === 'Enter' && document.getElementById('exit-overlay').style.display === 'flex') {
         confirmExit();
+      }
+    });
+
+    // Also block keyup for Meta/Win to prevent Start menu release
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'Meta') {
+        e.preventDefault();
+        e.stopPropagation();
       }
     });
 
@@ -147,9 +171,23 @@
 
     async function confirmExit() {
       const password = document.getElementById('exit-password').value;
-      if (examConfig && password === examConfig.admin_password) {
-        await invoke('exit_app');
+      log('confirmExit called, config loaded: ' + !!examConfig + ', password length: ' + password.length);
+      if (!examConfig) {
+        document.getElementById('exit-error').textContent = 'Config belum dimuat! Coba lagi.';
+        document.getElementById('exit-error').style.display = 'block';
+        return;
+      }
+      if (password === examConfig.admin_password) {
+        log('Password correct, exiting...');
+        try {
+          await invoke('exit_app');
+        } catch (e) {
+          console.error('Exit failed:', e);
+          window.close();
+        }
       } else {
+        log('Wrong password');
+        document.getElementById('exit-error').textContent = 'Password salah!';
         document.getElementById('exit-error').style.display = 'block';
       }
     }

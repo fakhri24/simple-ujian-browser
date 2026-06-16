@@ -7,8 +7,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WH_KEYBOARD_LL,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, VK_DELETE, VK_ESCAPE, VK_F4, VK_F5, VK_LWIN, VK_RWIN, VK_TAB,
-    VK_SNAPSHOT,
+    GetAsyncKeyState, VK_DELETE, VK_ESCAPE, VK_F4, VK_F5, VK_LWIN, VK_RWIN, VK_TAB, VK_SNAPSHOT,
 };
 
 const LLKHF_ALTDOWN: KBDLLHOOKSTRUCT_FLAGS = KBDLLHOOKSTRUCT_FLAGS(0x20);
