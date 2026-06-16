@@ -1,0 +1,28 @@
+{
+  "name": "simple-ujian-browser",
+  "version": "1.0.0",
+  "description": "Custom exam browser untuk Windows — bagian dari ekosistem ujian digital.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fakhri24/simple-ujian-browser.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fakhri24/simple-ujian-browser/issues"
+  },
+  "homepage": "https://github.com/fakhri24/simple-ujian-browser#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.61.0"
+  }
+}

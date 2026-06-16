@@ -7,7 +7,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WH_KEYBOARD_LL,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, VK_ESCAPE, VK_F4, VK_LWIN, VK_RWIN, VK_TAB,
+    GetAsyncKeyState, VK_DELETE, VK_ESCAPE, VK_F4, VK_F5, VK_LWIN, VK_RWIN, VK_TAB,
+    VK_SNAPSHOT,
 };
 
 const LLKHF_ALTDOWN: KBDLLHOOKSTRUCT_FLAGS = KBDLLHOOKSTRUCT_FLAGS(0x20);
@@ -25,10 +26,25 @@ unsafe extern "system" fn keyboard_hook_proc(
         let alt_down = (kb_struct.flags & LLKHF_ALTDOWN) != KBDLLHOOKSTRUCT_FLAGS(0);
 
         let block = match vk_code {
+            // Alt+Tab (task switcher)
             _ if vk_code == VK_TAB.0 as u32 && alt_down => true,
+            // Win key (both left and right) — Start menu
             _ if vk_code == VK_LWIN.0 as u32 || vk_code == VK_RWIN.0 as u32 => true,
+            // Alt+F4 (close window)
             _ if vk_code == VK_F4.0 as u32 && alt_down => true,
+            // Ctrl+Esc (Start menu alternative)
             _ if vk_code == VK_ESCAPE.0 as u32 && is_ctrl_pressed() => true,
+            // Alt+Esc (window cycling)
+            _ if vk_code == VK_ESCAPE.0 as u32 && alt_down => true,
+            // Print Screen (screenshot)
+            _ if vk_code == VK_SNAPSHOT.0 as u32 => true,
+            // Alt+Print Screen (active window screenshot)
+            // Already covered by VK_SNAPSHOT + alt_down
+            // F5 (refresh in browser)
+            _ if vk_code == VK_F5.0 as u32 && !alt_down => true,
+            // Ctrl+Alt+Delete — can't fully block at hook level,
+            // but block Ctrl+Alt combos
+            _ if vk_code == VK_DELETE.0 as u32 && is_ctrl_pressed() && alt_down => true,
             _ => false,
         };
 
@@ -57,6 +73,7 @@ pub fn enable_keyboard_hook() {
                 Ok(h) => {
                     HOOK_HANDLE = Some(h);
                     println!("[Kiosk] Keyboard hook installed successfully");
+                    println!("[Kiosk] Blocked: Win key, Alt+Tab, Alt+F4, Ctrl+Esc, Alt+Esc, PrintScreen, F5");
 
                     // Message loop required to keep the low-level keyboard hook alive.
                     // Runs on a dedicated thread so the main thread can drive

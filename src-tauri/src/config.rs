@@ -18,22 +18,42 @@ pub struct ExamConfig {
 impl ExamConfig {
     pub fn load() -> Self {
         let config_path = Self::config_path();
-        if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .expect("Failed to read config file");
-            serde_json::from_str(&content)
-                .expect("Failed to parse config JSON")
-        } else {
-            Self::default_config()
+        match config_path {
+            Some(path) => {
+                println!("[Config] Loading config from: {}", path.display());
+                let content = fs::read_to_string(&path)
+                    .expect("Failed to read config file");
+                serde_json::from_str(&content)
+                    .expect("Failed to parse config JSON")
+            }
+            None => {
+                println!("[Config] No config.json found, using defaults");
+                Self::default_config()
+            }
         }
     }
 
-    fn config_path() -> PathBuf {
+    fn config_path() -> Option<PathBuf> {
         let exe_dir = std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|p| p.to_path_buf()))
             .unwrap_or_else(|| PathBuf::from("."));
-        exe_dir.join("config.json")
+
+        // Search order: exe_dir first, then resources/ subdirectory
+        let candidates = [
+            exe_dir.join("config.json"),
+            exe_dir.join("resources").join("config.json"),
+        ];
+
+        for path in &candidates {
+            if path.exists() {
+                println!("[Config] Found config at: {}", path.display());
+                return Some(path.clone());
+            }
+            println!("[Config] Not found: {}", path.display());
+        }
+
+        None
     }
 
     fn default_config() -> Self {
@@ -60,7 +80,7 @@ impl ExamConfig {
         self.whitelist.iter().any(|pattern| {
             if pattern.contains('*') {
                 let regex_pattern = pattern
-                    .replace('.', "\\.")
+                    .replace('.', "\\\\.")
                     .replace('*', ".*");
                 regex::Regex::new(&format!("^{}$", regex_pattern))
                     .map(|re| re.is_match(url))

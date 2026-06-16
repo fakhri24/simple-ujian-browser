@@ -1,6 +1,8 @@
 #[cfg(target_os = "windows")]
 pub mod windows;
 
+pub mod webview_setup;
+
 pub fn enable_kiosk_mode() {
     #[cfg(target_os = "windows")]
     {
