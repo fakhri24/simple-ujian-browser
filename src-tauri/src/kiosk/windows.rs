@@ -1,18 +1,18 @@
 use std::ptr::null_mut;
-use windows::Win32::Foundation::{LRESULT, WPARAM, LPARAM};
+use windows::Win32::Foundation::{LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::UI::WindowsAndMessaging::{
-    SetWindowsHookExW, UnhookWindowsHookEx, CallNextHookEx,
-    KBDLLHOOKSTRUCT, HOOKPROC, WH_KEYBOARD_LL,
-    GetMessageW, MSG,
+    CallNextHookEx, GetMessageW, SetWindowsHookExW, UnhookWindowsHookEx,
+    HHOOK, HOOKPROC, KBDLLHOOKSTRUCT, KBDLLHOOKSTRUCT_FLAGS, MSG,
+    WH_KEYBOARD_LL,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    VK_TAB, VK_LWIN, VK_RWIN, VK_ESCAPE, VK_F4, GetAsyncKeyState,
+    GetAsyncKeyState, VK_ESCAPE, VK_F4, VK_LWIN, VK_RWIN, VK_TAB,
 };
 
-const LLKHF_ALTDOWN: u32 = 0x20;
+const LLKHF_ALTDOWN: KBDLLHOOKSTRUCT_FLAGS = KBDLLHOOKSTRUCT_FLAGS(0x20);
 
-static mut HOOK_HANDLE: *mut std::ffi::c_void = null_mut();
+static mut HOOK_HANDLE: Option<HHOOK> = None;
 
 unsafe extern "system" fn keyboard_hook_proc(
     code: i32,
@@ -22,8 +22,7 @@ unsafe extern "system" fn keyboard_hook_proc(
     if code >= 0 {
         let kb_struct = &*(lparam.0 as *const KBDLLHOOKSTRUCT);
         let vk_code = kb_struct.vkCode;
-        let flags = kb_struct.flags;
-        let alt_down = (flags & LLKHF_ALTDOWN) != 0;
+        let alt_down = (kb_struct.flags & LLKHF_ALTDOWN) != KBDLLHOOKSTRUCT_FLAGS(0);
 
         let block = match vk_code {
             _ if vk_code == VK_TAB.0 as u32 && alt_down => true,
@@ -51,16 +50,11 @@ pub fn enable_keyboard_hook() {
         let h_module = GetModuleHandleW(None).unwrap();
         let hook_proc: HOOKPROC = Some(keyboard_hook_proc);
 
-        let hook = SetWindowsHookExW(
-            WH_KEYBOARD_LL,
-            hook_proc,
-            h_module,
-            0,
-        );
+        let hook = SetWindowsHookExW(WH_KEYBOARD_LL, hook_proc, h_module, 0);
 
         match hook {
             Ok(h) => {
-                HOOK_HANDLE = h.0 as *mut std::ffi::c_void;
+                HOOK_HANDLE = Some(h);
                 println!("[Kiosk] Keyboard hook installed successfully");
 
                 let mut msg = MSG::default();
@@ -78,9 +72,8 @@ pub fn enable_keyboard_hook() {
 #[allow(dead_code)]
 pub fn disable_keyboard_hook() {
     unsafe {
-        if !HOOK_HANDLE.is_null() {
-            UnhookWindowsHookEx(windows::Win32::Foundation::HANDLE(HOOK_HANDLE as _));
-            HOOK_HANDLE = null_mut();
+        if let Some(hook) = HOOK_HANDLE.take() {
+            let _ = UnhookWindowsHookEx(hook);
             println!("[Kiosk] Keyboard hook removed");
         }
     }
