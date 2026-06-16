@@ -11,14 +11,14 @@
     "windows": [
       {
         "title": "Simple Ujian Browser",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
-        "fullscreen": false
+        "fullscreen": true,
+        "decorations": false,
+        "resizable": false,
+        "alwaysOnTop": true
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self' https://simple-ujian.web.app https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com wss://*.firebaseio.com"
     }
   },
   "bundle": {
